@@ -1,6 +1,7 @@
 var leaveCalculator = {
     timeoff: {},
     rows: [],
+    leaveUsage: {},
     nextPayPeriodEndDate: null,
     calculateFirstPPE: function(){
         var epochPPE = new Date(2019, 1, 2);
@@ -21,15 +22,22 @@ var leaveCalculator = {
       var nextPPEDate = this.calculateFirstPPE();
       var totalLeaveAccrued = parseFloat($('#currentAL').val());
       for(var i = 0; i < totalRows; i++ ){
+        var leaveUse = 0;
+        if (i in this.leaveUsage) {
+            leaveUse = this.leaveUsage[i];
+          } else {
+            this.leaveUsage[i] = 0;
+          }
           var pped = nextPPEDate;
           var payperiodHours = $('#hoursPerPayPeriod').val();
           var leaveAccrued = parseFloat($('#years').val());
-          totalLeaveAccrued += leaveAccrued;
+          totalLeaveAccrued += leaveAccrued - leaveUse;
 
           this.rows[i]= {
               'payPeriodEndDate': pped,
               'hoursWorked': payperiodHours,
               'leaveAcrued': leaveAccrued,
+              'leaveUse': leaveUse,
               'totalLeaveAcrued': totalLeaveAccrued.toFixed(2)
           };
 
@@ -40,17 +48,26 @@ var leaveCalculator = {
     renderTable: function(divId){
       this.generateTable();
       var projectionTable ="<table border='1'>";
-      projectionTable +="<tr><th>Pay Period Enddate</th><th>Hours Worked</th><th>Leave Accrued</th><th>Total Leave Available</th></tr>";
+      projectionTable +="<tr><th>Pay Period Enddate</th><th>Hours Worked</th><th>Leave Accrued</th><th>Leave Use</th><th>Total Leave Available</th></tr>";
 
       for(var i = 0; i < this.rows.length; i++){
         projectionTable += "<tr><td>"+ this.rows[i].payPeriodEndDate +"</td>";
         projectionTable += "<td>"+ this.rows[i].hoursWorked +"</td>";
         projectionTable += "<td>"+ this.rows[i].leaveAcrued +"</td>";
+        projectionTable += "<td contenteditable='true' id='row_"+i+"' onInput='leaveCalculator.storeLeaveUse("+i+")'>"+ this.rows[i].leaveUse +"</td>";
         projectionTable += "<td>"+ this.rows[i].totalLeaveAcrued +"</td></tr>";
 
       }
       projectionTable += "</table>";
       $("#"+divId).html( projectionTable);
+    },
+    storeLeaveUse: function(rowId){
+//      console.log("rowID:"+ rowId);
+      leaveUse = $("#row_"+rowId).html();
+//      console.log("leaveUse: "+ leaveUse )
+      this.leaveUsage[rowId] = leaveUse;
+      this.renderTable('table');
+
     }
 }
 $(document).ready( function() {
